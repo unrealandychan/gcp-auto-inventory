@@ -1,0 +1,13 @@
+[
+  {
+    "api": "iam",
+    "version": "v1",
+    "resource": "projects.serviceAccounts",
+    "method": "list",
+    "parameters": {
+      "name": "projects/{project}"
+    },
+    "result_key": "accounts",
+    "description": "List IAM service accounts"
+  }
+]

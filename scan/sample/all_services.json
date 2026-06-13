@@ -1,0 +1,215 @@
+[
+  {
+    "api": "storage",
+    "version": "v1",
+    "resource": "buckets",
+    "method": "list",
+    "result_key": "items",
+    "description": "List all Cloud Storage buckets"
+  },
+  {
+    "api": "sqladmin",
+    "version": "v1",
+    "resource": "instances",
+    "method": "list",
+    "result_key": "items",
+    "description": "List Cloud SQL instances"
+  },
+  {
+    "api": "container",
+    "version": "v1",
+    "resource": "projects.locations.clusters",
+    "method": "list",
+    "parameters": {
+      "parent": "projects/{project}/locations/-"
+    },
+    "result_key": "clusters",
+    "description": "List GKE clusters across all locations"
+  },
+  {
+    "api": "run",
+    "version": "v2",
+    "resource": "projects.locations.services",
+    "method": "list",
+    "parameters": {
+      "parent": "projects/{project}/locations/-"
+    },
+    "result_key": "services",
+    "description": "List Cloud Run services across all regions"
+  },
+  {
+    "api": "cloudfunctions",
+    "version": "v2",
+    "resource": "projects.locations.functions",
+    "method": "list",
+    "parameters": {
+      "parent": "projects/{project}/locations/-"
+    },
+    "result_key": "functions",
+    "description": "List Cloud Functions (2nd gen) across all regions"
+  },
+  {
+    "api": "bigquery",
+    "version": "v2",
+    "resource": "datasets",
+    "method": "list",
+    "result_key": "datasets",
+    "description": "List BigQuery datasets"
+  },
+  {
+    "api": "pubsub",
+    "version": "v1",
+    "resource": "projects.topics",
+    "method": "list",
+    "parameters": {
+      "project": "projects/{project}"
+    },
+    "result_key": "topics",
+    "description": "List Pub/Sub topics"
+  },
+  {
+    "api": "pubsub",
+    "version": "v1",
+    "resource": "projects.subscriptions",
+    "method": "list",
+    "parameters": {
+      "project": "projects/{project}"
+    },
+    "result_key": "subscriptions",
+    "description": "List Pub/Sub subscriptions"
+  },
+  {
+    "api": "secretmanager",
+    "version": "v1",
+    "resource": "projects.secrets",
+    "method": "list",
+    "parameters": {
+      "parent": "projects/{project}"
+    },
+    "result_key": "secrets",
+    "description": "List Secret Manager secrets (metadata only)"
+  },
+  {
+    "api": "iam",
+    "version": "v1",
+    "resource": "projects.serviceAccounts",
+    "method": "list",
+    "parameters": {
+      "name": "projects/{project}"
+    },
+    "result_key": "accounts",
+    "description": "List IAM service accounts"
+  },
+  {
+    "api": "cloudkms",
+    "version": "v1",
+    "resource": "projects.locations.keyRings",
+    "method": "list",
+    "parameters": {
+      "parent": "projects/{project}/locations/-"
+    },
+    "result_key": "keyRings",
+    "description": "List Cloud KMS key rings across all locations"
+  },
+  {
+    "api": "monitoring",
+    "version": "v3",
+    "resource": "projects.alertPolicies",
+    "method": "list",
+    "parameters": {
+      "name": "projects/{project}"
+    },
+    "result_key": "alertPolicies",
+    "description": "List Cloud Monitoring alert policies"
+  },
+  {
+    "api": "logging",
+    "version": "v2",
+    "resource": "projects.sinks",
+    "method": "list",
+    "parameters": {
+      "parent": "projects/{project}"
+    },
+    "result_key": "sinks",
+    "description": "List Cloud Logging sinks"
+  },
+  {
+    "api": "artifactregistry",
+    "version": "v1",
+    "resource": "projects.locations.repositories",
+    "method": "list",
+    "parameters": {
+      "parent": "projects/{project}/locations/-"
+    },
+    "result_key": "repositories",
+    "description": "List Artifact Registry repositories"
+  },
+  {
+    "api": "redis",
+    "version": "v1",
+    "resource": "projects.locations.instances",
+    "method": "list",
+    "parameters": {
+      "parent": "projects/{project}/locations/-"
+    },
+    "result_key": "instances",
+    "description": "List Memorystore for Redis instances"
+  },
+  {
+    "api": "dataflow",
+    "version": "v1b3",
+    "resource": "projects.jobs",
+    "method": "list",
+    "parameters": {
+      "projectId": "{project}"
+    },
+    "result_key": "jobs",
+    "description": "List Dataflow jobs"
+  },
+  {
+    "api": "dataproc",
+    "version": "v1",
+    "resource": "projects.regions.clusters",
+    "method": "list",
+    "parameters": {
+      "projectId": "{project}",
+      "region": "-"
+    },
+    "result_key": "clusters",
+    "description": "List Dataproc clusters across all regions"
+  },
+  {
+    "api": "spanner",
+    "version": "v1",
+    "resource": "projects.instances",
+    "method": "list",
+    "parameters": {
+      "parent": "projects/{project}"
+    },
+    "result_key": "instances",
+    "description": "List Cloud Spanner instances"
+  },
+  {
+    "api": "bigtableadmin",
+    "version": "v2",
+    "resource": "projects.instances",
+    "method": "list",
+    "parameters": {
+      "parent": "projects/{project}"
+    },
+    "result_key": "instances",
+    "description": "List Cloud Bigtable instances"
+  },
+  {
+    "api": "serviceusage",
+    "version": "v1",
+    "resource": "services",
+    "method": "list",
+    "parameters": {
+      "parent": "projects/{project}",
+      "filter": "state:ENABLED"
+    },
+    "result_key": "services",
+    "description": "List enabled GCP APIs/services for the project"
+  }
+]

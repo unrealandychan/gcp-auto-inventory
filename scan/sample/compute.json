@@ -1,0 +1,154 @@
+[
+  {
+    "api": "compute",
+    "version": "v1",
+    "resource": "instances",
+    "method": "aggregatedList",
+    "result_key": "items",
+    "description": "List all Compute Engine VM instances (all zones)"
+  },
+  {
+    "api": "compute",
+    "version": "v1",
+    "resource": "disks",
+    "method": "aggregatedList",
+    "result_key": "items",
+    "description": "List all persistent disks (all zones)"
+  },
+  {
+    "api": "compute",
+    "version": "v1",
+    "resource": "networks",
+    "method": "list",
+    "result_key": "items",
+    "description": "List VPC networks"
+  },
+  {
+    "api": "compute",
+    "version": "v1",
+    "resource": "subnetworks",
+    "method": "aggregatedList",
+    "result_key": "items",
+    "description": "List subnets across all regions"
+  },
+  {
+    "api": "compute",
+    "version": "v1",
+    "resource": "firewalls",
+    "method": "list",
+    "result_key": "items",
+    "description": "List firewall rules"
+  },
+  {
+    "api": "compute",
+    "version": "v1",
+    "resource": "addresses",
+    "method": "aggregatedList",
+    "result_key": "items",
+    "description": "List reserved IP addresses (all regions)"
+  },
+  {
+    "api": "compute",
+    "version": "v1",
+    "resource": "forwardingRules",
+    "method": "aggregatedList",
+    "result_key": "items",
+    "description": "List forwarding rules for load balancers"
+  },
+  {
+    "api": "compute",
+    "version": "v1",
+    "resource": "backendServices",
+    "method": "aggregatedList",
+    "result_key": "items",
+    "description": "List backend services"
+  },
+  {
+    "api": "compute",
+    "version": "v1",
+    "resource": "instanceGroups",
+    "method": "aggregatedList",
+    "result_key": "items",
+    "description": "List instance groups (all zones)"
+  },
+  {
+    "api": "compute",
+    "version": "v1",
+    "resource": "autoscalers",
+    "method": "aggregatedList",
+    "result_key": "items",
+    "description": "List autoscalers"
+  },
+  {
+    "api": "compute",
+    "version": "v1",
+    "resource": "snapshots",
+    "method": "list",
+    "result_key": "items",
+    "description": "List disk snapshots"
+  },
+  {
+    "api": "compute",
+    "version": "v1",
+    "resource": "images",
+    "method": "list",
+    "result_key": "items",
+    "description": "List custom machine images"
+  },
+  {
+    "api": "compute",
+    "version": "v1",
+    "resource": "routers",
+    "method": "aggregatedList",
+    "result_key": "items",
+    "description": "List Cloud Routers"
+  },
+  {
+    "api": "compute",
+    "version": "v1",
+    "resource": "vpnTunnels",
+    "method": "aggregatedList",
+    "result_key": "items",
+    "description": "List VPN tunnels"
+  },
+  {
+    "api": "compute",
+    "version": "v1",
+    "resource": "interconnects",
+    "method": "list",
+    "result_key": "items",
+    "description": "List Cloud Interconnect connections"
+  },
+  {
+    "api": "compute",
+    "version": "v1",
+    "resource": "sslCertificates",
+    "method": "aggregatedList",
+    "result_key": "items",
+    "description": "List SSL certificates"
+  },
+  {
+    "api": "compute",
+    "version": "v1",
+    "resource": "targetHttpsProxies",
+    "method": "aggregatedList",
+    "result_key": "items",
+    "description": "List HTTPS target proxies"
+  },
+  {
+    "api": "compute",
+    "version": "v1",
+    "resource": "urlMaps",
+    "method": "aggregatedList",
+    "result_key": "items",
+    "description": "List URL maps"
+  },
+  {
+    "api": "compute",
+    "version": "v1",
+    "resource": "healthChecks",
+    "method": "aggregatedList",
+    "result_key": "items",
+    "description": "List health checks"
+  }
+]

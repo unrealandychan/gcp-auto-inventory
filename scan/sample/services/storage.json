@@ -1,0 +1,10 @@
+[
+  {
+    "api": "storage",
+    "version": "v1",
+    "resource": "buckets",
+    "method": "list",
+    "result_key": "items",
+    "description": "List all Cloud Storage buckets in the project"
+  }
+]

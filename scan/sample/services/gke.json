@@ -1,0 +1,13 @@
+[
+  {
+    "api": "container",
+    "version": "v1",
+    "resource": "projects.locations.clusters",
+    "method": "list",
+    "parameters": {
+      "parent": "projects/{project}/locations/-"
+    },
+    "result_key": "clusters",
+    "description": "List GKE clusters across all locations"
+  }
+]
