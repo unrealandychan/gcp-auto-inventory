@@ -27,6 +27,10 @@ Authentication uses **Application Default Credentials (ADC)** — the same mecha
 - 🔗 **URL scan files** — load scan definitions from a remote URL
 - 💾 **Structured JSON output** — one file per project × service × method
 - 🔐 **ADC auth** — works with `gcloud auth application-default login`, service account keys, or Workload Identity
+- 🔍 **Dry-Run / Validation Mode** — validate scan files structurally and preview API parameter resolutions without GCP credentials
+- 📄 **API Pagination Support** — recursively paginates using `nextPageToken` and merges items automatically across all pages
+- 🛠️ **Smart Project Param Names** — automatically uses `projectId` for BigQuery or substitutes `{project}` templates inside path parameters, preventing `TypeError` errors on nested resources
+- 🛡️ **Graceful Disabled API Handling** — logs warning/info messages instead of verbose tracebacks when scanning projects where some APIs are not enabled
 
 ---
 
@@ -113,6 +117,7 @@ python scan.py -s SCAN_FILE [-p PROJECT ...] [options]
 | `--retry-delay` | Base delay (seconds) for retry backoff. | `2` |
 | `--concurrent-projects` | Number of projects to scan at once. | All at once |
 | `--concurrent-services` | Number of services to scan at once per project. | All at once |
+| `--dry-run` | Validate the scan file and preview planned API calls without executing. | Off |
 
 ---
 

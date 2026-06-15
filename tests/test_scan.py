@@ -2,18 +2,28 @@
 
 import json
 import os
-import tempfile
-from datetime import datetime
-from unittest.mock import MagicMock, patch
-
+from typing import Any
 
 # We test without needing real GCP credentials by mocking the google libraries
 import sys
+import tempfile
+from datetime import datetime
+from unittest.mock import MagicMock, patch
 
 # Mock the google modules before importing scan
 google_mock = MagicMock()
 google_auth_mock = MagicMock()
 google_auth_mock.default.return_value = (MagicMock(), "test-project")
+
+class MockHttpError(Exception):
+    def __init__(self, resp, content, uri=None):
+        self.resp = resp
+        self.content = content
+        self.uri = uri
+        super().__init__(str(content))
+
+errors_mock = MagicMock()
+errors_mock.HttpError = MockHttpError
 
 sys.modules["google"] = google_mock
 sys.modules["google.auth"] = google_auth_mock
@@ -22,7 +32,7 @@ sys.modules["google.auth.transport"] = MagicMock()
 sys.modules["google.auth.transport.requests"] = MagicMock()
 sys.modules["googleapiclient"] = MagicMock()
 sys.modules["googleapiclient.discovery"] = MagicMock()
-sys.modules["googleapiclient.errors"] = MagicMock()
+sys.modules["googleapiclient.errors"] = errors_mock
 
 # Now we can import scan safely
 import scan as scan_module  # noqa: E402
@@ -198,3 +208,168 @@ class TestMainFunction:
             for root, _, files in os.walk(tmp):
                 json_files.extend(f for f in files if f.endswith(".json"))
             assert len(json_files) >= 1
+
+
+class TestNewFeatures:
+    """Tests for placeholder replacement, custom project param names, pagination, and disabled API handling."""
+
+    def test_substitute_project(self) -> None:
+        params = {
+            "parent": "projects/{project}/locations/-",
+            "nested": {
+                "name": "projects/{project}/topics/my-topic",
+                "list_field": ["{project}", "no-change"]
+            },
+            "integer": 123
+        }
+        res = scan_module._substitute_project(params, "my-real-project")
+        assert res["parent"] == "projects/my-real-project/locations/-"
+        assert res["nested"]["name"] == "projects/my-real-project/topics/my-topic"
+        assert res["nested"]["list_field"][0] == "my-real-project"
+        assert res["nested"]["list_field"][1] == "no-change"
+        assert res["integer"] == 123
+
+    def test_has_project_placeholder(self) -> None:
+        assert scan_module._has_project_placeholder({"parent": "projects/{project}"}) is True
+        assert scan_module._has_project_placeholder({"nested": {"list": ["{project}"]}}) is True
+        assert scan_module._has_project_placeholder({"flat": "project-id"}) is False
+
+    def test_is_service_disabled_error(self) -> None:
+        from googleapiclient.errors import HttpError
+
+        # Mock exception 1: contains SERVICE_DISABLED in details
+        exc_resp = MagicMock()
+        exc_resp.status = 403
+        exc_content = json.dumps({
+            "error": {
+                "message": "Some API error",
+                "details": [{"reason": "SERVICE_DISABLED"}]
+            }
+        }).encode("utf-8")
+        exc1 = HttpError(exc_resp, exc_content)
+        assert scan_module._is_service_disabled_error(exc1) is True
+
+        # Mock exception 2: contains "has not been used in project" in message
+        exc_content2 = json.dumps({
+            "error": {
+                "message": "Cloud Functions API has not been used in project 123 before or it is disabled."
+            }
+        }).encode("utf-8")
+        exc2 = HttpError(exc_resp, exc_content2)
+        assert scan_module._is_service_disabled_error(exc2) is True
+
+        # Mock exception 3: standard non-disabled 403
+        exc_content3 = json.dumps({
+            "error": {
+                "message": "Permission denied"
+            }
+        }).encode("utf-8")
+        exc3 = HttpError(exc_resp, exc_content3)
+        assert scan_module._is_service_disabled_error(exc3) is False
+
+    def test_merge_responses_list(self) -> None:
+        responses = [
+            {"clusters": [{"name": "c1"}, {"name": "c2"}], "nextPageToken": "token1"},
+            {"clusters": [{"name": "c3"}], "nextPageToken": "token2"},
+            {"clusters": []}
+        ]
+        res = scan_module._merge_responses(responses, "clusters")
+        assert len(res) == 3
+        assert res == [{"name": "c1"}, {"name": "c2"}, {"name": "c3"}]
+
+    def test_merge_responses_dict(self) -> None:
+        # e.g., Compute aggregatedList
+        responses = [
+            {
+                "items": {
+                    "zones/us-central1-a": {"instances": [{"name": "i1"}]},
+                    "zones/us-central1-b": {"instances": [{"name": "i2"}]}
+                }
+            },
+            {
+                "items": {
+                    "zones/us-central1-a": {"instances": [{"name": "i3"}]},
+                    "zones/us-central1-c": {"instances": [{"name": "i4"}]}
+                }
+            }
+        ]
+        res = scan_module._merge_responses(responses, "items")
+        assert "zones/us-central1-b" in res
+        assert "zones/us-central1-c" in res
+        # zones/us-central1-a should be merged
+        assert len(res["zones/us-central1-a"]["instances"]) == 2
+        assert res["zones/us-central1-a"]["instances"] == [{"name": "i1"}, {"name": "i3"}]
+
+    def test_dry_run_scan(self, capsys: Any) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            scan_file = os.path.join(tmp, "scan.json")
+            with open(scan_file, "w") as f:
+                json.dump([
+                    {
+                        "api": "container",
+                        "version": "v1",
+                        "resource": "projects.locations.clusters",
+                        "method": "list",
+                        "parameters": {"parent": "projects/{project}/locations/-"},
+                        "description": "GKE clusters"
+                    },
+                    {
+                        "api": "bigquery",
+                        "version": "v2",
+                        "resource": "datasets",
+                        "method": "list",
+                        "description": "BQ Datasets"
+                    }
+                ], f)
+
+            scan_module.dry_run_scan(scan_file, ["real-project-123"])
+            captured = capsys.readouterr()
+            assert "real-project-123" in captured.out
+            assert "parent" in captured.out
+            assert "projects/real-project-123/locations/-" in captured.out
+            assert "projectId" in captured.out  # BQ projectId injection
+
+    def test_get_service_data_disabled_api_graceful(self) -> None:
+        from googleapiclient.errors import HttpError
+        import logging
+
+        # Setup disabled error
+        exc_resp = MagicMock()
+        exc_resp.status = 403
+        exc_content = json.dumps({
+            "error": {
+                "message": "API has not been used in project or is disabled."
+            }
+        }).encode("utf-8")
+        exc = HttpError(exc_resp, exc_content)
+
+        # Mock build client
+        mock_client = MagicMock()
+        mock_resource = MagicMock()
+        # Mock resource method execution throwing HttpError
+        mock_method = MagicMock()
+        mock_method.execute.side_effect = exc
+        getattr(mock_resource, "list").return_value = mock_method
+
+        service = {
+            "api": "container",
+            "version": "v1",
+            "resource": "projects.locations.clusters",
+            "method": "list",
+            "parameters": {"parent": "projects/{project}/locations/-"}
+        }
+
+        log = logging.getLogger("test_disabled")
+        with (
+            patch("scan.build_gcp_client", return_value=mock_client),
+            patch("scan._resolve_resource", return_value=mock_resource),
+            patch.object(log, "warning") as mock_warning,
+            patch.object(log, "error") as mock_error
+        ):
+            res = scan_module._get_service_data(MagicMock(), "proj-123", service, log, 1, 1)
+
+        assert res is None
+        # Should have logged warning instead of error
+        mock_warning.assert_called_once()
+        mock_error.assert_not_called()
+

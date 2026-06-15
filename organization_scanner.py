@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """GCP Organization Scanner.
 
 Lists all active GCP projects accessible to the authenticated principal
@@ -8,15 +7,15 @@ against each project using the same logic as scan.py.
 
 import json
 import os
-from typing import Any, Optional
+from typing import Any
 
 from googleapiclient import discovery
 from googleapiclient.errors import HttpError
+from scan import check_gcp_credentials, timestamp
+from scan import main as scan_main
 
-from scan import check_gcp_credentials, main as scan_main, timestamp
 
-
-def list_projects(credentials: Any, org_id: Optional[str] = None) -> list:
+def list_projects(credentials: Any, org_id: str | None = None) -> list:
     """List all active GCP projects accessible to the caller.
 
     If org_id is provided, only projects belonging to that Organization
@@ -62,14 +61,14 @@ def list_projects(credentials: Any, org_id: Optional[str] = None) -> list:
 
 
 def scan_organization(
-    org_id: Optional[str],
+    org_id: str | None,
     scan: str,
     output_dir: str,
     log_level: str,
     max_retries: int,
     retry_delay: int,
-    concurrent_projects: Optional[int],
-    concurrent_services: Optional[int],
+    concurrent_projects: int | None,
+    concurrent_services: int | None,
 ) -> None:
     """Scan all active projects in a GCP Organization.
 
