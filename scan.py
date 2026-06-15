@@ -10,6 +10,7 @@ Usage:
 
 import argparse
 import concurrent.futures
+import csv
 import json
 import logging
 import os
@@ -98,6 +99,133 @@ def display_time(seconds: float) -> str:
     minutes = (seconds % 3600) // 60
     secs = seconds % 60
     return f"{int(hours)}h:{int(minutes)}m:{int(secs)}s"
+
+
+def _count_gcp_resources(data: Any) -> int:
+    """Helper to count resources in typical GCP JSON output structure.
+
+    Args:
+        data: Deserialized JSON data from a resource scan.
+
+    Returns:
+        Number of items counted.
+    """
+    if data is None:
+        return 0
+    if isinstance(data, list):
+        return len(data)
+    if isinstance(data, dict):
+        # Check if this is a Compute Engine aggregatedList response.
+        # An aggregatedList contains zone/region dictionaries, each of which has a list under the resource key.
+        total_count = 0
+        is_aggregated_list = False
+        for _, zone_val in data.items():
+            if isinstance(zone_val, dict):
+                for _, res_val in zone_val.items():
+                    if isinstance(res_val, list):
+                        is_aggregated_list = True
+                        total_count += len(res_val)
+        if is_aggregated_list:
+            return total_count
+        return len(data)
+    return 1 if data else 0
+
+
+def generate_summary(run_dir: str) -> None:
+    """Generate summary.csv and summary.md for a completed scan run.
+
+    Args:
+        run_dir: Path to the specific run directory (e.g. output/2026-06-13T14-00/).
+    """
+    if not os.path.isdir(run_dir):
+        print(f"Error: Run directory '{run_dir}' does not exist.")
+        return
+
+    summary_rows = []
+
+    # Walk the run directory to find all JSON files
+    for root, _, files in os.walk(run_dir):
+        for file in files:
+            if not file.endswith(".json") or file == "projects.json" or file == "summary.json":
+                continue
+
+            file_path = os.path.join(root, file)
+            rel_path = os.path.relpath(file_path, run_dir)
+            parts = rel_path.split(os.sep)
+
+            if len(parts) < 2:
+                continue
+
+            project_id = parts[0]
+            filename = parts[1]
+
+            # Filename is <api>-<resource>-<method>.json
+            name_without_ext = filename[:-5]
+            name_parts = name_without_ext.split("-")
+            if len(name_parts) >= 3:
+                api = name_parts[0]
+                method = name_parts[-1]
+                resource = "-".join(name_parts[1:-1]).replace("_", ".")
+            else:
+                api = "unknown"
+                resource = "unknown"
+                method = "unknown"
+
+            try:
+                with open(file_path, "r") as f:
+                    data = json.load(f)
+                count = _count_gcp_resources(data)
+            except Exception:  # noqa: BLE001
+                count = 0
+
+            summary_rows.append({
+                "Project ID": project_id,
+                "API (Service)": api,
+                "Resource": resource,
+                "Method": method,
+                "Resource Count": count,
+                "Detail File": rel_path
+            })
+
+    if not summary_rows:
+        print(f"No resource JSON files found under '{run_dir}' to summarize.")
+        return
+
+    summary_rows.sort(key=lambda x: (x["Project ID"], x["API (Service)"], x["Resource"]))
+
+    # 1. Write CSV Summary
+    csv_file = os.path.join(run_dir, "summary.csv")
+    fields = ["Project ID", "API (Service)", "Resource", "Method", "Resource Count", "Detail File"]
+    try:
+        with open(csv_file, "w", newline="", encoding="utf-8") as f:
+            writer = csv.DictWriter(f, fieldnames=fields)
+            writer.writeheader()
+            writer.writerows(summary_rows)
+        print(f"Summary CSV saved to: {csv_file}")
+    except Exception as exc:
+        print(f"Error writing CSV summary: {exc}")
+
+    # 2. Write Markdown Summary
+    md_file = os.path.join(run_dir, "summary.md")
+    try:
+        with open(md_file, "w", encoding="utf-8") as f:
+            f.write("# GCP Resource Inventory Run Summary\n\n")
+            f.write(f"Generated on: {datetime.now().isoformat(timespec='seconds')}\n\n")
+            f.write("| Project ID | API (Service) | Resource | Method | Resource Count | Detail File |\n")
+            f.write("|---|---|---|---|---|---|\n")
+            for row in summary_rows:
+                file_link = f"[{row['Detail File']}]({row['Detail File']})"
+                f.write(
+                    f"| `{row['Project ID']}` "
+                    f"| `{row['API (Service)']}` "
+                    f"| `{row['Resource']}` "
+                    f"| `{row['Method']}` "
+                    f"| **{row['Resource Count']}** "
+                    f"| {file_link} |\n"
+                )
+        print(f"Summary Markdown saved to: {md_file}")
+    except Exception as exc:
+        print(f"Error writing Markdown summary: {exc}")
 
 
 def _substitute_project(params: Any, project_id: str) -> Any:
@@ -707,6 +835,9 @@ def main(
     elapsed = time.time() - start_time
     print(f"Total elapsed time: {display_time(elapsed)}")
     print(f"Results stored in: {output_dir}/{timestamp}/")
+
+    # Generate summary CSV and Markdown files
+    generate_summary(os.path.join(output_dir, timestamp))
 
 
 if __name__ == "__main__":

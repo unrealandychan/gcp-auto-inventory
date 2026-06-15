@@ -373,3 +373,65 @@ class TestNewFeatures:
         mock_warning.assert_called_once()
         mock_error.assert_not_called()
 
+    def test_count_gcp_resources_list(self) -> None:
+        data = [{"name": "item1"}, {"name": "item2"}]
+        assert scan_module._count_gcp_resources(data) == 2
+
+    def test_count_gcp_resources_aggregated_list(self) -> None:
+        # Compute Engine aggregatedList representation
+        data = {
+            "zones/us-central1-a": {
+                "instances": [{"name": "i1"}, {"name": "i2"}]
+            },
+            "zones/us-central1-b": {
+                "instances": [{"name": "i3"}]
+            },
+            "zones/us-central1-c": {
+                "warning": {"message": "No instances"}
+            }
+        }
+        assert scan_module._count_gcp_resources(data) == 3
+
+    def test_count_gcp_resources_other(self) -> None:
+        assert scan_module._count_gcp_resources(None) == 0
+        assert scan_module._count_gcp_resources("some-string") == 1
+        assert scan_module._count_gcp_resources({}) == 0
+
+    def test_generate_summary_run(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            run_dir = os.path.join(tmp, "2026-06-13T14-00")
+            project_dir = os.path.join(run_dir, "proj-123")
+            os.makedirs(project_dir, exist_ok=True)
+
+            # Write fake json results
+            gke_file = os.path.join(project_dir, "container-projects_locations_clusters-list.json")
+            with open(gke_file, "w") as f:
+                json.dump([{"name": "c1"}, {"name": "c2"}], f)
+
+            bq_file = os.path.join(project_dir, "bigquery-datasets-list.json")
+            with open(bq_file, "w") as f:
+                json.dump([{"name": "ds1"}], f)
+
+            scan_module.generate_summary(run_dir)
+
+            # Verify CSV file is created and has correct rows
+            csv_path = os.path.join(run_dir, "summary.csv")
+            assert os.path.exists(csv_path)
+            with open(csv_path, "r") as f:
+                content = f.read()
+                assert "proj-123" in content
+                assert "container" in content
+                assert "projects.locations.clusters" in content
+                assert "bigquery" in content
+                assert "datasets" in content
+
+            # Verify Markdown file is created and has correct lines
+            md_path = os.path.join(run_dir, "summary.md")
+            assert os.path.exists(md_path)
+            with open(md_path, "r") as f:
+                md_content = f.read()
+                assert "# GCP Resource Inventory Run Summary" in md_content
+                assert "proj-123" in md_content
+                assert "**2**" in md_content
+                assert "**1**" in md_content
+
